@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoリスト</title>
+    <style>
+        
+        /* Sidebar styles */
+        #sidebar {
+            width: 200px;
+            height: 100%;
+            background-color: #333;
+            color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+        }
+
+        /* To-do list styles */
+        #todoList {
+            margin-left: 220px; /* Adjust for the sidebar width */
+            padding: 20px;
+        }
+
+        /* Content area styles */
+        #contentArea {
+            margin-left: 440px; /* Adjust for the sidebar and to-do list width */
+            padding: 20px;
+        }
+
+        /* Additional styles for the ToDo items */
+        .todoItem {
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        /* Style for the left button image */
+        .leftButton {
+            cursor: pointer;
+            margin-right: 5px; /* Adjust the margin as needed */
+        }
+
+        /* Style for the toggle button */
+        .toggleButton {
+            width: 30px;
+            height: 15px;
+            background-color: #ddd;
+            border-radius: 15px;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .toggleButton.on {
+            background-color: #000000; /* Green color when ON */
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <h2>Signal list</h2>
+        <ul id="sidebarList">
+            <!-- Existing sidebar items -->
+        </ul>
+        <input type="text" id="sidebarInput" placeholder="Add item">
+        <button id="addItemBtn">Add</button>
+    </div>
+
+    <!-- To-do list -->
+    <div id="todoList">
+        <form id="myForm">
+            <input type="text" id="textInput" required>
+            <button type="submit">追加</button>
+        </form>
+    </div>
+
+    <!-- Content area for displaying pages and ToDo lists -->
+    <div id="contentArea"></div>
+
+    <!-- Add this link to include the Sortable library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+    <script>
+        let itemIdCounter = 0; // 追加した項目に一意のIDを付与するためのカウンター
+        let todoItems = []; // ToDoリストの項目を保持するリスト
+
+        document.getElementById("myForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var inputValue = document.getElementById("textInput").value;
+
+            // ToDoリストにアイテムを追加するコード
+            var todoList = document.getElementById("todoList");
+            var todoItem = document.createElement("div");
+            todoItem.classList.add("todoItem");
+
+            // チェックボックスを作成
+            var checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            todoItem.appendChild(checkbox);
+
+            // ToDoアイテムを表示する要素を作成
+            var todoContent = document.createElement("span");
+            todoContent.textContent = inputValue;
+            todoItem.appendChild(todoContent);
+
+            // ToDoアイテムの情報を保存
+            todoItems.push({ id: "todo_" + itemIdCounter++, text: inputValue, checked: false });
+
+            todoList.appendChild(todoItem);
+
+            // テキスト入力をクリア
+            document.getElementById("textInput").value = "";
+        });
+
+        // Add item to the sidebar
+        document.getElementById("addItemBtn").addEventListener("click", function() {
+            var sidebarInput = document.getElementById("sidebarInput");
+            var itemText = sidebarInput.value.trim();
+
+            if (itemText !== "") {
+                var sidebarList = document.getElementById("sidebarList");
+                var listItem = document.createElement("li");
+
+                // 追加: 画像ボタンを作成
+                var leftButton = document.createElement("img");
+                leftButton.src = "path/to/left-icon.png"; // 画像のパスを指定
+                leftButton.alt = "Left";
+                leftButton.classList.add("leftButton");
+                leftButton.addEventListener("click", function() {
+                    // クリックしたときの処理を追加
+                    handleLeftButtonClick(itemText);
+                });
+
+                // 追加: トグルボタンを作成
+                var toggleButton = document.createElement("div");
+                toggleButton.classList.add("toggleButton");
+                toggleButton.addEventListener("click", function() {
+                    // クリックしたときの処理を追加
+                    handleToggleButton(itemText, toggleButton);
+                });
+
+                listItem.appendChild(leftButton);
+                listItem.appendChild(toggleButton);
+                listItem.textContent = itemText;
+
+                var itemId = "item_" + itemIdCounter++;
+                listItem.setAttribute("data-item-id", itemId); // IDを付与
+                listItem.addEventListener("click", function() {
+                    // クリックしたときに新しいページを表示
+                    displayToDoList(itemText);
+                });
+                listItem.addEventListener("contextmenu", function(event) {
+                    event.preventDefault();
+                    var newName = prompt("Enter a new name", itemText);
+                    if (newName !== null && newName !== "") {
+                        listItem.textContent = newName;
+
+                        // ToDoリストの対応する項目も更新
+                        todoItems.find(item => item.id === itemId).text = newName;
+                    }
+                });
+                sidebarList.appendChild(listItem);
+                sidebarInput.value = "";
+
+                // サイドバーに項目を追加
+                todoItems.push({ id: itemId, text: itemText, todoList: [], isToggleOn: false });
+
+                // Enable sorting after adding a new item
+                enableSorting();
+            }
+        });
+
+        // Function to enable sorting for the sidebar list
+        function enableSorting() {
+            new Sortable(document.getElementById("sidebarList"), {
+                animation: 150,
+                ghostClass: 'sortable-ghost'
+            });
+        }
+
+        // Function to handle left button click
+        function handleLeftButtonClick(itemText) {
+            // 左ボタンがクリックされたときの処理を追加
+            console.log("Left button clicked for item: " + itemText);
+            // ここに追加の処理を記述
+        }
+
+        // Function to handle toggle button click
+        function handleToggleButton(itemText, toggleButton) {
+            // トグルボタンがクリックされたときの処理を追加
+            var item = todoItems.find(item => item.text === itemText);
+            item.isToggleOn = !item.isToggleOn;
+            toggleButton.classList.toggle("on", item.isToggleOn);
+            // ここに追加の処理を記述
+        }
+
+        // Function to display a ToDo list for the selected item
+        function displayToDoList(itemText) {
+            var contentArea = document.getElementById("contentArea");
+            contentArea.innerHTML = ""; // Clear previous content
+
+            var todoHeader = document.createElement("h2");
+            todoHeader.textContent = "ToDo List for: " + itemText;
+            contentArea.appendChild(todoHeader);
+
+            var todoForm = document.createElement("form");
+            var todoInput = document.createElement("input");
+            todoInput.type = "text";
+            todoInput.id = "todoInput";
+            todoInput.required = true;
+            var todoSubmit = document.createElement("button");
+            todoSubmit.type = "submit";
+            todoSubmit.textContent = "追加";
+
+            todoForm.appendChild(todoInput);
+            todoForm.appendChild(todoSubmit);
+            contentArea.appendChild(todoForm);
+
+            // Event listener to add ToDo items to the list
+            todoForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                var todoValue = todoInput.value;
+
+                // ToDoリストにアイテムを追加するコード
+                var todoList = document.getElementById("contentArea");
+                var todoItem = document.createElement("div");
+                todoItem.classList.add("todoItem");
+
+                // チェックボックスを作成
+                var checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                todoItem.appendChild(checkbox);
+
+                // ToDoアイテムを表示する要素を作成
+                var todoContent = document.createElement("span");
+                todoContent.textContent = todoValue;
+                todoItem.appendChild(todoContent);
+
+                // ToDoアイテムの情報を保存
+                todoItems.find(item => item.text === itemText).todoList.push({ text: todoValue, checked: false });
+
+                todoList.appendChild(todoItem);
+
+                // テキスト入力をクリア
+                todoInput.value = "";
+            });
+        }
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoリスト</title>
+    <style>
+        /* 既存のスタイル */
+
+        /* 追加: チェック項目のスタイル */
+        .checkIndicators {
+            display: flex;
+        }
+
+        .checkIndicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .checkIndicator.red {
+            background-color: #ff5c5c; /* 赤色 */
+        }
+
+        .checkIndicator.blue {
+            background-color: #5cb8ff; /* 青色 */
+        }
+
+        .checkIndicator.yellow {
+            background-color: #fff45c; /* 黄色 */
+        }
+    </style>
+</head>
+<body>
+    <!-- 既存のHTMLコード -->
+
+    <script>
+        // 既存のスクリプト
+
+        // Function to display ToDo items for the selected item
+        function displayToDoList(itemText) {
+            var contentArea = document.getElementById("contentArea");
+            contentArea.innerHTML = ""; // Clear previous content
+
+            var todoHeader = document.createElement("h2");
+            todoHeader.textContent = "ToDo List for: " + itemText;
+            contentArea.appendChild(todoHeader);
+
+            var todoForm = document.createElement("form");
+            var todoInput = document.createElement("input");
+            todoInput.type = "text";
+            todoInput.id = "todoInput";
+            todoInput.required = true;
+            var todoSubmit = document.createElement("button");
+            todoSubmit.type = "submit";
+            todoSubmit.textContent = "追加";
+
+            todoForm.appendChild(todoInput);
+            todoForm.appendChild(todoSubmit);
+            contentArea.appendChild(todoForm);
+
+            // Event listener to add ToDo items to the list
+            todoForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                var todoValue = todoInput.value;
+
+                // ToDoリストにアイテムを追加するコード
+                var todoList = document.getElementById("contentArea");
+                var todoItem = document.createElement("div");
+                todoItem.classList.add("todoItem");
+
+                // チェックボックスを作成
+                var checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                todoItem.appendChild(checkbox);
+
+                // ToDoアイテムを表示する要素を作成
+                var todoContent = document.createElement("span");
+                todoContent.textContent = todoValue;
+                todoItem.appendChild(todoContent);
+
+                // 追加: チェック項目の表示
+                var checkIndicators = document.createElement("div");
+                checkIndicators.classList.add("checkIndicators");
+                todoItem.appendChild(checkIndicators);
+
+                // ToDoアイテムの情報を保存
+                var todoItemInfo = {
+                    text: todoValue,
+                    checked: false,
+                    checkColors: ["red", "blue", "yellow"]
+                };
+
+                // チェック項目の表示を追加
+                todoItemInfo.checkColors.forEach(color => {
+                    var checkIndicator = document.createElement("div");
+                    checkIndicator.classList.add("checkIndicator", color);
+                    checkIndicators.appendChild(checkIndicator);
+                });
+
+                todoItems.find(item => item.text === itemText).todoList.push(todoItemInfo);
+
+                todoList.appendChild(todoItem);
+
+                // テキスト入力をクリア
+                todoInput.value = "";
+            });
+        }
+    </script>
+</body>
+</html>
